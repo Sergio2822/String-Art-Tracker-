@@ -361,12 +361,31 @@
       line.setAttribute('x2', to.x);
       line.setAttribute('y2', to.y);
       line.setAttribute('stroke', color);
-      line.setAttribute('stroke-width', '0.4');
+      line.setAttribute('stroke-width', '0.3');
       line.setAttribute('opacity', '0');
       svg.appendChild(line);
-      
-      setTimeout(() => line.setAttribute('opacity', '0.4'), 10);
-      
+
+      if (label) {
+        const midX = (from.x + to.x) / 2;
+        const midY = (from.y + to.y) / 2;
+        const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        text.setAttribute('x', midX);
+        text.setAttribute('y', midY);
+        text.setAttribute('fill', color);
+        text.setAttribute('font-size', '10');
+        text.setAttribute('text-anchor', 'middle');
+        text.setAttribute('alignment-baseline', 'middle');
+        text.setAttribute('opacity', '0');
+        text.textContent = label;
+        svg.appendChild(text);
+
+        setTimeout(() => {
+          line.setAttribute('opacity', '1');
+          text.setAttribute('opacity', '1');
+        }, 10);
+      } else {
+        setTimeout(() => line.setAttribute('opacity', '1'), 10);
+      }
     }
 
     function redrawAllLines() {
@@ -390,4 +409,4 @@
       }
     });
   </script></body>
-  </html>
+</html>
