@@ -1,0 +1,361 @@
+<!DOCTYPE html><html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>String Art Tracker</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      background-color: #121212;
+      color: #e0e0e0;
+      display: flex;
+      flex-direction: row;
+      gap: 20px;
+    }
+    textarea, button, select, input[type="file"] {
+      background-color: #1e1e1e;
+      color: #e0e0e0;
+      border: 1px solid #444;
+    }
+    textarea::placeholder {
+      color: #999;
+    }
+    .left-column {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .right-column {
+      flex: 1;
+      overflow-y: auto;
+      max-height: 90vh;
+    }
+    .thread {
+      margin-bottom: 20px;
+      padding: 10px;
+      background: #1e1e1e;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+      cursor: pointer;
+    }
+    .thread.active {
+      border: 2px solid cyan;
+    }
+    .thread-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .color-box {
+      width: 20px;
+      height: 20px;
+      border: 2px solid black;
+      display: inline-block;
+    }
+    .thread h3 {
+      margin: 0;
+    }
+    .buttons {
+      margin-top: 10px;
+    }
+    button {
+      margin-right: 5px;
+      padding: 5px 10px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #333;
+    }
+    #frame-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-top: 30px;
+    }
+    #svgFrame {
+      background-color: darkcyan;
+      border: 1px solid #444;
+      border-radius: 10px;
+      transform: rotate(90deg);
+    }
+  </style>
+</head>
+<body>
+  <div class="left-column">
+    <h1>String Art Tracker</h1>
+    <textarea id="input" rows="10" cols="50" placeholder="Paste your thread sequence here..."></textarea><br>
+    <label for="pegCount">Number of pegs:</label>
+    <select id="pegCount">
+      <option value="154">154</option>
+    </select>
+    <button onclick="initTracker()">Start Tracker</button>
+    <button onclick="completeAll()">Complete All Sequences</button>
+    <button onclick="saveProgress()">Save Progress</button>
+    <input type="file" id="loadFile" accept="application/json" onchange="loadProgress(event)"><div id="frame-container">
+  <h2>Visualization</h2>
+  <svg id="svgFrame" width="500" height="500"></svg>
+</div>
+
+  </div>  <div class="right-column">
+    <div id="threads"></div>
+  </div>  <script>
+    class StringArtTracker {
+      constructor(inputText, pegCount) {
+        this.pegCount = pegCount;
+        this.threads = this.parseInput(inputText);
+        this.history = [];
+      }
+
+      parseInput(inputText) {
+        const lines = inputText.trim().split('\n');
+        const threads = [];
+        let currentThread = null;
+
+        for (let line of lines) {
+          line = line.trim();
+          if (line.startsWith('Thread')) {
+            const color = line.match(/(.*?)/)[1].split(',').map(Number);
+            currentThread = { color, points: [], completed: 0 };
+            threads.push(currentThread);
+          } else if (line !== '') {
+            currentThread?.points.push(parseInt(line));
+          }
+        }
+        return threads;
+      }
+
+      markNext(threadIndex) {
+        const thread = this.threads[threadIndex];
+        if (thread && thread.completed < thread.points.length - 1) {
+          const from = thread.points[thread.completed];
+          const to = thread.points[thread.completed + 1];
+          const label = `${thread.completed + 1}/${thread.points.length - 1}`;
+          drawLine(from, to, `rgb(${thread.color.join(',')})`, label);
+          this.history.push({ threadIndex, action: 'next' });
+          thread.completed++;
+        }
+        renderThreads();
+      }
+
+      undoLast() {
+        const last = this.history.pop();
+        if (!last) return;
+        const thread = this.threads[last.threadIndex];
+        if (last.action === 'next' && thread.completed > 0) {
+          thread.completed--;
+          redrawAllLines();
+        }
+        renderThreads();
+      }
+
+      getProgress(threadIndex) {
+        const t = this.threads[threadIndex];
+        return ((t.completed / (t.points.length - 1)) * 100).toFixed(2) + '%';
+      }
+
+      getOverallProgress() {
+        let total = 0, completed = 0;
+        this.threads.forEach(t => {
+          total += t.points.length - 1;
+          completed += t.completed;
+        });
+        return ((completed / total) * 100).toFixed(2) + '%';
+      }
+
+      toJSON() {
+        return JSON.stringify({
+          pegCount: this.pegCount,
+          threads: this.threads
+        }, null, 2);
+      }
+
+      static fromJSON(json) {
+        const data = JSON.parse(json);
+        const tracker = new StringArtTracker('', data.pegCount);
+        tracker.threads = data.threads;
+        return tracker;
+      }
+    }
+
+    let tracker = null;
+    let activeThreadIndex = 0;
+    let svg = document.getElementById('svgFrame');
+    let pegCount = 300;
+
+    function initTracker() {
+      const input = document.getElementById('input').value;
+      pegCount = parseInt(document.getElementById('pegCount').value);
+      tracker = new StringArtTracker(input, pegCount);
+      renderThreads();
+      drawPegs();
+    }
+
+    function completeAll() {
+      if (!tracker) return;
+      tracker.threads.forEach((thread, i) => {
+        while (thread.completed < thread.points.length - 1) {
+          tracker.markNext(i);
+        }
+      });
+    }
+
+    function saveProgress() {
+      if (!tracker) return;
+      const blob = new Blob([tracker.toJSON()], { type: 'application/json' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = 'string_art_progress.json';
+      link.click();
+    }
+
+    function loadProgress(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        tracker = StringArtTracker.fromJSON(reader.result);
+        pegCount = tracker.pegCount;
+        renderThreads();
+        drawPegs();
+        redrawAllLines();
+      };
+      reader.readAsText(file);
+    }
+
+    function renderThreads() {
+      const container = document.getElementById('threads');
+      container.innerHTML = '';
+      if (!tracker) return;
+
+      tracker.threads.forEach((t, i) => {
+        const div = document.createElement('div');
+        div.className = 'thread';
+        if (i === activeThreadIndex) div.classList.add('active');
+        div.onclick = () => {
+          activeThreadIndex = i;
+          document.querySelectorAll('.thread').forEach(t => t.classList.remove('active'));
+          div.classList.add('active');
+        };
+
+        const header = document.createElement('div');
+        header.className = 'thread-header';
+
+        const colorBox = document.createElement('div');
+        colorBox.className = 'color-box';
+        colorBox.style.backgroundColor = `rgb(${t.color.join(',')})`;
+
+        const title = document.createElement('h3');
+        title.innerText = `Thread ${i}`;
+
+        header.appendChild(colorBox);
+        header.appendChild(title);
+
+        const progress = document.createElement('p');
+        progress.innerText = `Progress: ${t.completed}/${t.points.length - 1} (${tracker.getProgress(i)})`;
+
+        const currentPoint = t.points[t.completed] ?? 'None';
+        const nextPoint = t.points[t.completed + 1] ?? 'None';
+        const stepInfo = document.createElement('p');
+        stepInfo.innerText = `Current: ${currentPoint} | Next: ${nextPoint}`;
+
+        const btns = document.createElement('div');
+        btns.className = 'buttons';
+
+        const markNextBtn = document.createElement('button');
+        markNextBtn.innerText = 'Mark Next';
+        markNextBtn.onclick = () => tracker.markNext(i);
+
+        const manualStepInput = document.createElement('input');
+        manualStepInput.type = 'number';
+        manualStepInput.min = 0;
+        manualStepInput.max = t.points.length - 1;
+        manualStepInput.value = t.completed;
+        manualStepInput.style.width = '50px';
+        manualStepInput.onchange = () => {
+          const val = parseInt(manualStepInput.value);
+          if (!isNaN(val) && val >= 0 && val <= t.points.length - 1) {
+            t.completed = val;
+            redrawAllLines();
+            renderThreads();
+          }
+        };
+
+        btns.appendChild(markNextBtn);
+        btns.appendChild(manualStepInput);
+
+        div.appendChild(header);
+        div.appendChild(progress);
+        div.appendChild(stepInfo);
+        div.appendChild(btns);
+        container.appendChild(div);
+      });
+
+      const overall = document.createElement('p');
+      overall.innerText = `Overall Progress: ${tracker.getOverallProgress()}`;
+      container.appendChild(overall);
+    }
+
+    function getPegPosition(index) {
+      const radius = 220;
+      const centerX = 250;
+      const centerY = 250;
+      const angle = (index / pegCount) * 2 * Math.PI;
+      return {
+        x: centerX + radius * Math.cos(angle - Math.PI / 2),
+        y: centerY + radius * Math.sin(angle - Math.PI / 2)
+      };
+    }
+
+    function drawPegs() {
+      svg.innerHTML = '';
+      for (let i = 0; i < pegCount; i++) {
+        const pos = getPegPosition(i);
+        const peg = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        peg.setAttribute('cx', pos.x);
+        peg.setAttribute('cy', pos.y);
+        peg.setAttribute('r', '2');
+        peg.setAttribute('fill', 'white');
+        svg.appendChild(peg);
+      }
+    }
+
+    function drawLine(fromIdx, toIdx, color, label = '') {
+      const from = getPegPosition(fromIdx);
+      const to = getPegPosition(toIdx);
+      const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      line.setAttribute('x1', from.x);
+      line.setAttribute('y1', from.y);
+      line.setAttribute('x2', to.x);
+      line.setAttribute('y2', to.y);
+      line.setAttribute('stroke', color);
+      line.setAttribute('stroke-width', '0.4');
+      line.setAttribute('opacity', '0');
+      svg.appendChild(line);
+      
+      setTimeout(() => line.setAttribute('opacity', '0.4'), 10);
+      
+    }
+
+    function redrawAllLines() {
+      drawPegs();
+      tracker.threads.forEach((thread) => {
+        for (let i = 0; i < thread.completed; i++) {
+          const label = `${i + 1}/${thread.points.length - 1}`;
+          drawLine(thread.points[i], thread.points[i + 1], `rgb(${thread.color.join(',')})`, label);
+        }
+      });
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if (!tracker) return;
+      if (e.key === 'Enter') {
+        tracker.markNext(activeThreadIndex);
+        e.preventDefault();
+      } else if ((e.metaKey || e.ctrlKey) && e.key === 'z') {
+        tracker.undoLast();
+        e.preventDefault();
+      }
+    });
+  </script></body>
+  </html>
