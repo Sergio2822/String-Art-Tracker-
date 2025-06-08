@@ -4,124 +4,130 @@
   <meta charset="UTF-8" />
   <title>String Art Tracker</title>
   <style>
-    * {
-      box-sizing: border-box;
-    }
+* {
+  box-sizing: border-box;
+}
 
-    body {
-      margin: 0;
-      padding: 0;
-      background-color: #121212;
-      color: #e0e0e0;
-      font-family: Arial, sans-serif;
-    }
+body {
+  margin: 0;
+  padding: 0;
+  background-color: #121212;
+  color: #e0e0e0;
+  font-family: Arial, sans-serif;
+}
 
-    .container {
-      display: flex;
-      flex-direction: row;
-      gap: 20px;
-      padding: 20px;
-      min-height: 100vh;
-    }
+.container {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 20px;
+  padding: 20px;
+  min-height: 100vh;
+}
 
-    textarea, button, select, input[type="file"] {
-      background-color: #1e1e1e;
-      color: #e0e0e0;
-      border: 1px solid #444;
-    }
+textarea, button, select, input[type="file"] {
+  background-color: #1e1e1e;
+  color: #e0e0e0;
+  border: 1px solid #444;
+}
 
-    textarea::placeholder {
-      color: #999;
-    }
+textarea::placeholder {
+  color: #999;
+}
 
-    .left-column,
-    .right-column {
-      flex: 1;
-    }
+.left-column,
+.right-column {
+  flex: 1;
+  min-width: 300px;
+}
 
-    .left-column {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
+.left-column {
+  display: flex;
+  flex-direction: column;
+}
 
-    .right-column {
-      overflow-y: auto;
-    }
+.right-column {
+  overflow-y: auto;
+}
 
-    .thread {
-      margin-bottom: 20px;
-      padding: 10px;
-      background: #1e1e1e;
-      border-radius: 8px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.5);
-      cursor: pointer;
-    }
+.thread {
+  margin-bottom: 20px;
+  padding: 10px;
+  background: #1e1e1e;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+  cursor: pointer;
+}
 
-    .thread.active {
-      border: 2px solid cyan;
-    }
+.thread.active {
+  border: 2px solid cyan;
+}
 
-    .thread-header {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
+.thread-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
 
-    .thread-header h3 span {
-      font-size: 1rem;
-      color: lightgreen;
-    }
+.thread-header h3 span {
+  font-size: 1rem;
+  color: lightgreen;
+}
 
-    .color-box {
-      width: 20px;
-      height: 20px;
-      border: 2px solid black;
-      display: inline-block;
-    }
+.color-box {
+  width: 20px;
+  height: 20px;
+  border: 2px solid black;
+  display: inline-block;
+}
 
-    .thread h3 {
-      margin: 0;
-    }
+.thread h3 {
+  margin: 0;
+}
 
-    .buttons {
-      margin-top: 10px;
-    }
+.buttons {
+  margin-top: 10px;
+}
 
-    button {
-      margin-right: 5px;
-      padding: 5px 10px;
-      cursor: pointer;
-    }
+button {
+  margin-right: 5px;
+  padding: 5px 10px;
+  cursor: pointer;
+}
 
-    button:hover {
-      background-color: #333;
-    }
+button:hover {
+  background-color: #333;
+}
 
-    #frame-container {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      margin-top: 30px;
-      width: 100%;
-    }
+#frame-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 30px;
+  width: 100%;
+}
 
-    #svgFrame {
-      background-color: darkcyan;
-      border: 1px solid #444;
-      border-radius: 10px;
-      transform: rotate(90deg);
-      width: 100%;
-      height: auto;
-      max-width: 500px;
-      aspect-ratio: 1 / 1;
-    }
+#svgFrame {
+  background-color: darkcyan;
+  border: 1px solid #444;
+  border-radius: 10px;
+  transform: rotate(90deg);
+  width: 100%;
+  height: auto;
+  max-width: 500px;
+  aspect-ratio: 1 / 1;
+}
 
-    @media (max-width: 800px) {
-      .container {
-        flex-direction: column;
-      }
-    }
+@media (max-width: 768px) {
+  .container {
+    flex-direction: column;
+  }
+
+  .left-column,
+  .right-column {
+    width: 100%;
+  }
+}
   </style>
 </head>
 <body>
