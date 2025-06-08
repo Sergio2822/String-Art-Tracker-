@@ -1,137 +1,155 @@
-<!DOCTYPE html><html lang="en">
+<!DOCTYPE html>
+<html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>String Art Tracker</title>
   <style>
-  body {
-    font-family: Arial, sans-serif;
-    margin: 20px;
-    background-color: #121212;
-    color: #e0e0e0;
-    display: flex;
-    flex-direction: row;
-    gap: 20px;
-    flex-wrap: wrap;
-  }
-
-  textarea, button, select, input[type="file"] {
-    background-color: #1e1e1e;
-    color: #e0e0e0;
-    border: 1px solid #444;
-    width: 100%;
-    box-sizing: border-box;
-  }
-
-  textarea::placeholder {
-    color: #999;
-  }
-
-  .left-column, .right-column {
-    flex: 1 1 100%;
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-  }
-
-  @media(min-width: 768px) {
-    .left-column, .right-column {
-      flex: 1 1 45%;
+    * {
+      box-sizing: border-box;
     }
-  }
 
-  .thread {
-    margin-bottom: 20px;
-    padding: 10px;
-    background: #1e1e1e;
-    border-radius: 8px;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.5);
-  }
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #121212;
+      color: #e0e0e0;
+      font-family: Arial, sans-serif;
+    }
 
-  .thread-header {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
+    .container {
+      display: flex;
+      flex-direction: row;
+      gap: 20px;
+      padding: 20px;
+      min-height: 100vh;
+    }
 
-  .color-box {
-    width: 20px;
-    height: 20px;
-    border: 2px solid black;
-    display: inline-block;
-  }
+    textarea, button, select, input[type="file"] {
+      background-color: #1e1e1e;
+      color: #e0e0e0;
+      border: 1px solid #444;
+    }
 
-  .thread h3 {
-    margin: 0;
-  }
+    textarea::placeholder {
+      color: #999;
+    }
 
-  .buttons {
-    margin-top: 10px;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 5px;
-  }
+    .left-column,
+    .right-column {
+      flex: 1;
+    }
 
-  button {
-    padding: 5px 10px;
-    cursor: pointer;
-    flex: 1 1 auto;
-  }
+    .left-column {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
 
-  button:hover {
-    background-color: #333;
-  }
+    .right-column {
+      overflow-y: auto;
+    }
 
-  #frame-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 10px;
-  }
+    .thread {
+      margin-bottom: 20px;
+      padding: 10px;
+      background: #1e1e1e;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+      cursor: pointer;
+    }
 
-  #svgFrame {
-    background-color: darkcyan;
-    border: 1px solid #444;
-    border-radius: 10px;
-    transform: rotate(90deg);
-    max-width: 100%;
-    height: auto;
-  }
+    .thread.active {
+      border: 2px solid cyan;
+    }
 
-  h1, h2 {
-    text-align: center;
-  }
+    .thread-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
 
-  #threads {
-    max-height: 70vh;
-    overflow-y: auto;
-  }
+    .thread-header h3 span {
+      font-size: 1rem;
+      color: lightgreen;
+    }
 
-  .save-load-buttons {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-  }
-</style>
+    .color-box {
+      width: 20px;
+      height: 20px;
+      border: 2px solid black;
+      display: inline-block;
+    }
+
+    .thread h3 {
+      margin: 0;
+    }
+
+    .buttons {
+      margin-top: 10px;
+    }
+
+    button {
+      margin-right: 5px;
+      padding: 5px 10px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #333;
+    }
+
+    #frame-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-top: 30px;
+      width: 100%;
+    }
+
+    #svgFrame {
+      background-color: darkcyan;
+      border: 1px solid #444;
+      border-radius: 10px;
+      transform: rotate(90deg);
+      width: 100%;
+      height: auto;
+      max-width: 500px;
+      aspect-ratio: 1 / 1;
+    }
+
+    @media (max-width: 768px) {
+      .container {
+        flex-direction: column;
+      }
+    }
+  </style>
 </head>
 <body>
-  <div class="left-column">
-    <h1>String Art Tracker</h1>
-    <textarea id="input" rows="10" cols="50" placeholder="Paste your thread sequence here..."></textarea><br>
-    <label for="pegCount">Number of pegs:</label>
-    <select id="pegCount">
-      <option value="154">154</option>
-    </select>
-    <button onclick="initTracker()">Start Tracker</button>
-    <button onclick="completeAll()">Complete All Sequences</button>
-    <button onclick="saveProgress()">Save Progress</button>
-    <input type="file" id="loadFile" accept="application/json" onchange="loadProgress(event)"><div id="frame-container">
-  <h2>Visualization</h2>
-  <svg id="svgFrame" width="500" height="500"></svg>
-</div>
+  <div class="container">
+    <div class="left-column">
+      <h1>String Art Tracker</h1>
+      <textarea id="input" rows="10" cols="50" placeholder="Paste your thread sequence here..."></textarea><br>
+      <label for="pegCount">Number of pegs:</label>
+      <select id="pegCount">
+        <option value="153">154</option>
+      </select>
+      <button onclick="initTracker()">Start Tracker</button>
+      <button onclick="completeAll()">Complete All Sequences</button>
+      <button onclick="saveProgress()">Save Progress</button>
+      <input type="file" id="loadFile" accept="application/json" onchange="loadProgress(event)">
 
-  </div>  <div class="right-column">
-    <div id="threads"></div>
-  </div>  <script>
+      <div id="frame-container">
+        <h2>Visualization</h2>
+        <svg id="svgFrame" viewBox="0 0 500 500" preserveAspectRatio="xMidYMid meet"></svg>
+      </div>
+    </div>
+
+    <div class="right-column">
+      <div id="threads"></div>
+    </div>
+  </div>
+
+  <script>
     class StringArtTracker {
       constructor(inputText, pegCount) {
         this.pegCount = pegCount;
@@ -279,6 +297,11 @@
 
         const title = document.createElement('h3');
         title.innerText = `Thread ${i}`;
+        if (t.completed >= t.points.length - 1) {
+          const checkmark = document.createElement('span');
+          checkmark.innerText = ' ✅';
+          title.appendChild(checkmark);
+        }
 
         header.appendChild(colorBox);
         header.appendChild(title);
@@ -361,31 +384,10 @@
       line.setAttribute('x2', to.x);
       line.setAttribute('y2', to.y);
       line.setAttribute('stroke', color);
-      line.setAttribute('stroke-width', '0.3');
+      line.setAttribute('stroke-width', '0.4');
       line.setAttribute('opacity', '0');
       svg.appendChild(line);
-
-      if (label) {
-        const midX = (from.x + to.x) / 2;
-        const midY = (from.y + to.y) / 2;
-        const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-        text.setAttribute('x', midX);
-        text.setAttribute('y', midY);
-        text.setAttribute('fill', color);
-        text.setAttribute('font-size', '10');
-        text.setAttribute('text-anchor', 'middle');
-        text.setAttribute('alignment-baseline', 'middle');
-        text.setAttribute('opacity', '0');
-        text.textContent = label;
-        svg.appendChild(text);
-
-        setTimeout(() => {
-          line.setAttribute('opacity', '1');
-          text.setAttribute('opacity', '1');
-        }, 10);
-      } else {
-        setTimeout(() => line.setAttribute('opacity', '1'), 10);
-      }
+      setTimeout(() => line.setAttribute('opacity', '0.4'), 10);
     }
 
     function redrawAllLines() {
@@ -408,5 +410,6 @@
         e.preventDefault();
       }
     });
-  </script></body>
+  </script>
+</body>
 </html>
